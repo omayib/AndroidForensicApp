@@ -1,13 +1,22 @@
 package id.co.technomotion.androidforensicapp.model;
 
 public class DbFileInfo implements Item{
-        String name;
-        String path;
+    String name;
+    String path;
+    private boolean isChecked;
 
-        public DbFileInfo(String name, String path) {
-            this.name = name;
-            this.path = path;
-        }
+    public DbFileInfo(String name, String path) {
+        this.name = name;
+        this.path = path;
+    }
+
+    public boolean isChecked() {
+        return isChecked;
+    }
+
+    public void setChecked(boolean isChecked) {
+        this.isChecked = isChecked;
+    }
 
     public String getName() {
         return name;
@@ -18,12 +27,12 @@ public class DbFileInfo implements Item{
     }
 
     @Override
-        public String toString() {
-            return "DbFileInfo{" +
-                    "name='" + name + '\'' +
-                    ", path='" + path + '\'' +
-                    '}';
-        }
+    public String toString() {
+        return "DbFileInfo{" +
+                "name='" + name + '\'' +
+                ", path='" + path + '\'' +
+                '}';
+    }
 
     @Override
     public boolean isGroup() {

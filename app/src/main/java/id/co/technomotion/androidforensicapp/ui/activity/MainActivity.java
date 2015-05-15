@@ -1,10 +1,18 @@
 package id.co.technomotion.androidforensicapp.ui.activity;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
 
@@ -22,6 +30,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import id.co.technomotion.androidforensicapp.ui.adapter.PackageAdapter;
 import id.co.technomotion.androidforensicapp.R;
@@ -36,6 +46,7 @@ public class MainActivity extends ActionBarActivity {
     private PackageAdapter adapter;
     private ExpandableListView listview;
     private ProgressDialog pd;
+    private List<String> listOfSelectedDatabasePath=new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,11 +61,7 @@ public class MainActivity extends ActionBarActivity {
         /**
          * preparing data
          */
-        if(!pd.isShowing())
-            pd.show();
         listOfPackage=getPackagesContainDatabases();
-        if(pd.isShowing())
-            pd.dismiss();
 
         adapter=new PackageAdapter(this,listOfPackage,R.layout.group_item,R.layout.child_item);
         listview.setAdapter(adapter);
@@ -82,16 +89,59 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v,
                                         int groupPosition, int childPosition, long id) {
-                PackageInfo packageInfo= (PackageInfo) listOfDb.get(groupPosition);
+                final PackageInfo packageInfo= (PackageInfo) listOfDb.get(groupPosition);
                 System.out.println(packageInfo.getDatabaseDirectory());
+
+
                 return false;
             }
         });
-
+        adapter.setOnChildCheckedListener(new PackageAdapter.OnChildCheckedListener() {
+            @Override
+            public void onChildCheckedListener(String path) {
+                System.out.println(path);
+                popupDialog(path);
+            }
+        });
 
         adapter.notifyDataSetChanged();
 
     }
+
+    private void popupDialog(final String path){
+        String filename=path.substring(path.lastIndexOf("/"));
+        AlertDialog.Builder dialog=new AlertDialog.Builder(this);
+        dialog.setMessage("copy file "+filename+" ke sdcard?");
+        dialog.setPositiveButton("ya", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                copyFile(path);
+            }
+        });
+        dialog.setNegativeButton("tidak",new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater=getMenuInflater();
+        inflater.inflate(R.menu.menu_main,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+
+        return super.onOptionsItemSelected(item);
+    }
+
     private void getDbFiles(final PackageInfo pinfo){
         /**
          * check for readiness device
@@ -112,7 +162,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void commandOutput(int id, String line) {
                 super.commandOutput(id, line);
-                pinfo.setDatabaseFiles(new DbFileInfo(line, "data/data/" + pinfo.getPackageName() + "/" + line));
+                pinfo.setDatabaseFiles(new DbFileInfo(line, "data/data/" + pinfo.getPackageName() + "/databases/" + line));
             }
 
             @Override
@@ -122,10 +172,11 @@ public class MainActivity extends ActionBarActivity {
                     pd.dismiss();
                 adapter.setChild(pinfo);
                 adapter.notifyDataSetChanged();
+                adapter.notifyDataSetInvalidated();
+
             }
         };
 
-        System.out.println("command " + command.getCommand() + " with exit code " + command.getExitCode());
         try {
             if(!pd.isShowing())
                 pd.show();
@@ -172,46 +223,133 @@ public class MainActivity extends ActionBarActivity {
         return apps;
     }
 
-    private void copyFile(String inputPath, String inputFile, String outputPath) {
+    private void copyFile(String inputPath) {
+        final String filename=inputPath.substring(inputPath.lastIndexOf("/"));
+        final String tempOutputPath= Environment.getExternalStorageDirectory().getPath()+"/forensic_dir_temp";
+        System.out.println("tmp "+tempOutputPath);
+        File tempDir=new File(tempOutputPath);
+        if(!tempDir.exists()){
+            tempDir.mkdir();
+        }
 
-        InputStream in = null;
-        OutputStream out = null;
+        /**
+         * check for readiness device
+         */
+        if (RootTools.isBusyboxAvailable()) {
+            System.out.println("busybox available");
+        } else {
+            System.out.println("busybox NOT available");
+        }
+
+        if(RootTools.isRootAvailable()){
+            System.out.println("root available");
+        }else{
+            System.out.println("root not avlb");
+        }
+
+        Command commandCopy=new Command(0,"cp "+inputPath+" "+tempOutputPath){
+            @Override
+            public void commandCompleted(int id, int exitcode) {
+                super.commandCompleted(id, exitcode);
+                if(pd.isShowing())
+                    pd.dismiss();
+                compresToZip(tempOutputPath,tempOutputPath+"/"+filename,filename);
+            }
+
+            @Override
+            public void commandOutput(int id, String line) {
+                super.commandOutput(id, line);
+                System.out.println("cout "+line);
+            }
+        };
+
         try {
-
-            //create output directory if it doesn't exist
-            File dir = new File (outputPath);
-            if (!dir.exists())
-            {
-                dir.mkdirs();
-            }
-
-
-            in = new FileInputStream(inputPath + inputFile);
-            out = new FileOutputStream(outputPath + inputFile);
-
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = in.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
-            }
-            in.close();
-            in = null;
-
-            // write the output file (You have now copied the file)
-            out.flush();
-            out.close();
-            out = null;
-
-        }  catch (FileNotFoundException fnfe1) {
-            Log.e("tag", fnfe1.getMessage());
+            if(!pd.isShowing())
+                pd.show();
+            RootTools.getShell(true).add(commandCopy);
+            System.out.println(commandCopy.getCommand());
+        } catch (IOException e) {
+            e.printStackTrace();
+            if(pd.isShowing())
+                pd.dismiss();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+            if(pd.isShowing())
+                pd.dismiss();
+        } catch (RootDeniedException e) {
+            e.printStackTrace();
+            if(pd.isShowing())
+                pd.dismiss();
         }
-        catch (Exception e) {
-            Log.e("tag", e.getMessage());
-        }
+
+//        InputStream in = null;
+//        OutputStream out = null;
+//        try {
+//
+//            //create output directory if it doesn't exist
+//            File dir = new File (outputPath);
+//            if (!dir.exists())
+//            {
+//                dir.mkdirs();
+//            }
+//
+//
+//            in = new FileInputStream(inputPath + fileName);
+//            out = new FileOutputStream(outputPath + fileName);
+//
+//            byte[] buffer = new byte[1024];
+//            int read;
+//            while ((read = in.read(buffer)) != -1) {
+//                out.write(buffer, 0, read);
+//            }
+//            in.close();
+//            in = null;
+//
+//            // write the output file (You have now copied the file)
+//            out.flush();
+//            out.close();
+//            out = null;
+//
+//        }  catch (FileNotFoundException fnfe1) {
+//            Log.e("tag", fnfe1.getMessage());
+//        }
+//        catch (Exception e) {
+//            Log.e("tag", e.getMessage());
+//        }
 
     }
 
+    private void compresToZip(String outputPath,String filePath,String fileName) {
+        System.out.println("zip:"+outputPath);
+        System.out.println("zip:"+filePath);
+        System.out.println("zip:"+fileName);
+        byte[] buffer = new byte[1024];
 
+        try{
+
+            FileOutputStream fos = new FileOutputStream(outputPath+fileName+".zip");
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            ZipEntry ze= new ZipEntry(fileName);
+            zos.putNextEntry(ze);
+            FileInputStream in = new FileInputStream(filePath);
+
+            int len;
+            while ((len = in.read(buffer)) > 0) {
+                zos.write(buffer, 0, len);
+            }
+
+            in.close();
+            zos.closeEntry();
+
+            //remember close it
+            zos.close();
+
+            System.out.println("Done");
+
+        }catch(IOException ex){
+            ex.printStackTrace();
+        }
+    }
 
 
 }

@@ -7,8 +7,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,13 +27,15 @@ public class PackageAdapter extends BaseExpandableListAdapter{
     private List<PackageInfo> listOfPackages;
     private HashMap<PackageInfo,List<DbFileInfo>> listOfDatabases;
     private Context context;
+    private OnChildCheckedListener onChildCheckedListener;
+
 
     public PackageAdapter(Context context,List<PackageInfo> listOfPackages,  int resourceGroup,int resourceChild) {
         this.context = context;
         this.listOfPackages = listOfPackages;
         this.resourceGroup = resourceGroup;
         this.resourceChild=resourceChild;
-        listOfDatabases=new HashMap<>();
+        this.listOfDatabases=new HashMap<>();
         this.inflater= (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
     }
@@ -41,6 +45,9 @@ public class PackageAdapter extends BaseExpandableListAdapter{
         System.out.println("setChild "+listOfDatabases.get(parent).toString());
     }
 
+    public void setOnChildCheckedListener(OnChildCheckedListener listener){
+        this.onChildCheckedListener=listener;
+    }
     @Override
     public void notifyDataSetChanged() {
         super.notifyDataSetChanged();
@@ -111,19 +118,25 @@ public class PackageAdapter extends BaseExpandableListAdapter{
     }
 
     @Override
-    public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
+    public View getChildView(final int groupPosition, final int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
         ChildHolder viewHolder;
-        DbFileInfo dbFileInfo= (DbFileInfo) getChild(groupPosition,childPosition);
+        final DbFileInfo dbFileInfo= (DbFileInfo) getChild(groupPosition,childPosition);
         if(convertView==null){
             convertView=inflater.inflate(resourceChild,parent,false);
             viewHolder=new ChildHolder();
-            viewHolder.checkBoxChild = (CheckBox) convertView.findViewById(R.id.child_item_checkbox);
+            viewHolder.checkBoxChild = (TextView) convertView.findViewById(R.id.child_item_textView);
+
+            viewHolder.checkBoxChild.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onChildCheckedListener.onChildCheckedListener(dbFileInfo.getPath());
+
+                }
+            });
             convertView.setTag(viewHolder);
         }else{
             viewHolder= (ChildHolder) convertView.getTag();
         }
-
-
         viewHolder.checkBoxChild.setText(dbFileInfo.getName());
 
         return convertView;
@@ -134,11 +147,14 @@ public class PackageAdapter extends BaseExpandableListAdapter{
         return true;
     }
 
+    public interface OnChildCheckedListener{
+        void onChildCheckedListener(String path);
+    }
 
     private static class GroupHolder{
         TextView textViewGroup;
     }
     private static class ChildHolder{
-        CheckBox checkBoxChild;
+        TextView checkBoxChild;
     }
 }
