@@ -110,7 +110,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void popupDialog(final String path){
-        String filename=path.substring(path.lastIndexOf("/"));
+        String filename=path.substring(path.lastIndexOf("/")+1);
         AlertDialog.Builder dialog=new AlertDialog.Builder(this);
         dialog.setMessage("copy file "+filename+" ke sdcard?");
         dialog.setPositiveButton("ya", new DialogInterface.OnClickListener() {
@@ -217,6 +217,7 @@ public class MainActivity extends ActionBarActivity {
             System.out.println("busybox available");
         } else {
             System.out.println("busybox NOT available");
+            Toast.makeText(getApplicationContext(),"tidak bisa mengakses superuser",Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -224,6 +225,7 @@ public class MainActivity extends ActionBarActivity {
             System.out.println("root available");
         }else{
             System.out.println("root not avlb");
+            Toast.makeText(getApplicationContext(),"tidak bisa mengakses superuser",Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -242,9 +244,9 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onCompleted(int id, int exitCode) {
                 FileCompressor.compressToTarBz2(tempOutputPath, tempOutputPath + filename, filename);
-//                FileCompressor.compresToZip(tempOutputPath, tempOutputPath + filename, filename);
                 if(pd.isShowing())
                     pd.dismiss();
+                Toast.makeText(getApplicationContext(),"saved on "+tempOutputPath,Toast.LENGTH_SHORT).show();
             }
         });
 
