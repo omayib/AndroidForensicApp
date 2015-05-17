@@ -23,5 +23,6 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:22.0.0'
     compile files('libs/RootTools.jar')
-    compile files('libs/commons-compress-1.9-javadoc.jar')
+    compile files('libs/commons-compress-1.9.jar')
+    compile files('libs/jbzip2-0.9.1.jar')
 }
