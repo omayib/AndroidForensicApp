@@ -33,6 +33,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import id.co.technomotion.androidforensicapp.helper.CommandResponse;
+import id.co.technomotion.androidforensicapp.helper.FileCompressor;
+import id.co.technomotion.androidforensicapp.helper.SuperUserCommand;
 import id.co.technomotion.androidforensicapp.ui.adapter.PackageAdapter;
 import id.co.technomotion.androidforensicapp.R;
 import id.co.technomotion.androidforensicapp.model.DbFileInfo;
@@ -47,7 +50,7 @@ public class MainActivity extends ActionBarActivity {
     private ExpandableListView listview;
     private ProgressDialog pd;
     private List<String> listOfSelectedDatabasePath=new ArrayList<>();
-
+    private SuperUserCommand superUserCommand;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,6 +60,8 @@ public class MainActivity extends ActionBarActivity {
 
         pd=new ProgressDialog(this);
         pd.setMessage("please wait...");
+
+        superUserCommand=new SuperUserCommand(this);
 
         /**
          * preparing data
@@ -77,7 +82,6 @@ public class MainActivity extends ActionBarActivity {
         listview.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
             @Override
             public void onGroupExpand(int groupPosition) {
-
                 PackageInfo selectedPackageInfo=  listOfPackage.get(groupPosition);
                 System.out.println("onGroupExpand "+selectedPackageInfo.getDatabaseDirectory());
                 getDbFiles(selectedPackageInfo);
@@ -89,21 +93,12 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v,
                                         int groupPosition, int childPosition, long id) {
-                final PackageInfo packageInfo= (PackageInfo) listOfDb.get(groupPosition);
-                System.out.println(packageInfo.getDatabaseDirectory());
-
-
+                final DbFileInfo dbFileInfo= (DbFileInfo)adapter.getChild(groupPosition,childPosition);
+                System.out.println(dbFileInfo.getPath());
+                popupDialog(dbFileInfo.getPath());
                 return false;
             }
         });
-        adapter.setOnChildCheckedListener(new PackageAdapter.OnChildCheckedListener() {
-            @Override
-            public void onChildCheckedListener(String path) {
-                System.out.println(path);
-                popupDialog(path);
-            }
-        });
-
         adapter.notifyDataSetChanged();
 
     }
@@ -137,12 +132,12 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
-
         return super.onOptionsItemSelected(item);
     }
 
     private void getDbFiles(final PackageInfo pinfo){
+        if(!pd.isShowing())
+            pd.show();
         /**
          * check for readiness device
          */
@@ -157,43 +152,25 @@ public class MainActivity extends ActionBarActivity {
         }else{
             System.out.println("root not avlb");
         }
-        Command command = new Command(pinfo.getId(), "ls data/data/"+pinfo.getPackageName()+"/databases"){
-
+        superUserCommand.getListOfDatabase(pinfo,new CommandResponse() {
             @Override
-            public void commandOutput(int id, String line) {
-                super.commandOutput(id, line);
-                pinfo.setDatabaseFiles(new DbFileInfo(line, "data/data/" + pinfo.getPackageName() + "/databases/" + line));
+            public void onSuccess(String response) {
+                pinfo.setDatabaseFiles(new DbFileInfo(response, "data/data/" + pinfo.getPackageName() + "/databases/" + response));
             }
 
             @Override
-            public void commandCompleted(int id, int exitcode) {
-                super.commandCompleted(id, exitcode);
+            public void onFailure(Exception e) {
+                if(pd.isShowing())
+                    pd.dismiss();
+            }
+
+            @Override
+            public void onCompleted(int id, int exitCode) {
                 if(pd.isShowing())
                     pd.dismiss();
                 adapter.setChild(pinfo);
-                adapter.notifyDataSetChanged();
-                adapter.notifyDataSetInvalidated();
-
             }
-        };
-
-        try {
-            if(!pd.isShowing())
-                pd.show();
-            RootTools.getShell(true).add(command);
-        } catch (IOException e) {
-            e.printStackTrace();
-            if(pd.isShowing())
-                pd.dismiss();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-            if(pd.isShowing())
-                pd.dismiss();
-        } catch (RootDeniedException e) {
-            e.printStackTrace();
-            if(pd.isShowing())
-                pd.dismiss();
-        }
+        });
     }
 
     private ArrayList<PackageInfo> getInstalledApps(boolean getSysPackages) {
@@ -247,40 +224,60 @@ public class MainActivity extends ActionBarActivity {
             System.out.println("root not avlb");
         }
 
-        Command commandCopy=new Command(0,"cp "+inputPath+" "+tempOutputPath){
+        superUserCommand.copyFileToSdcard(inputPath,tempOutputPath,new CommandResponse() {
             @Override
-            public void commandCompleted(int id, int exitcode) {
-                super.commandCompleted(id, exitcode);
+            public void onSuccess(String response) {
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
                 if(pd.isShowing())
                     pd.dismiss();
-                compresToZip(tempOutputPath,tempOutputPath+"/"+filename,filename);
             }
 
             @Override
-            public void commandOutput(int id, String line) {
-                super.commandOutput(id, line);
-                System.out.println("cout "+line);
+            public void onCompleted(int id, int exitCode) {
+                FileCompressor.compresToZip(tempOutputPath, tempOutputPath + "/" + filename, filename);
+                if(pd.isShowing())
+                    pd.dismiss();
             }
-        };
+        });
 
-        try {
-            if(!pd.isShowing())
-                pd.show();
-            RootTools.getShell(true).add(commandCopy);
-            System.out.println(commandCopy.getCommand());
-        } catch (IOException e) {
-            e.printStackTrace();
-            if(pd.isShowing())
-                pd.dismiss();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-            if(pd.isShowing())
-                pd.dismiss();
-        } catch (RootDeniedException e) {
-            e.printStackTrace();
-            if(pd.isShowing())
-                pd.dismiss();
-        }
+//        Command commandCopy=new Command(0,"cp "+inputPath+" "+tempOutputPath){
+//            @Override
+//            public void commandCompleted(int id, int exitcode) {
+//                super.commandCompleted(id, exitcode);
+//                if(pd.isShowing())
+//                    pd.dismiss();
+//                FileCompressor.compresToZip(tempOutputPath, tempOutputPath + "/" + filename, filename);
+//            }
+//
+//            @Override
+//            public void commandOutput(int id, String line) {
+//                super.commandOutput(id, line);
+//                System.out.println("cout "+line);
+//            }
+//        };
+//
+//        try {
+//            if(!pd.isShowing())
+//                pd.show();
+//            RootTools.getShell(true).add(commandCopy);
+//            System.out.println(commandCopy.getCommand());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            if(pd.isShowing())
+//                pd.dismiss();
+//        } catch (TimeoutException e) {
+//            e.printStackTrace();
+//            if(pd.isShowing())
+//                pd.dismiss();
+//        } catch (RootDeniedException e) {
+//            e.printStackTrace();
+//            if(pd.isShowing())
+//                pd.dismiss();
+//        }
 
 //        InputStream in = null;
 //        OutputStream out = null;
@@ -319,37 +316,7 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
-    private void compresToZip(String outputPath,String filePath,String fileName) {
-        System.out.println("zip:"+outputPath);
-        System.out.println("zip:"+filePath);
-        System.out.println("zip:"+fileName);
-        byte[] buffer = new byte[1024];
 
-        try{
-
-            FileOutputStream fos = new FileOutputStream(outputPath+fileName+".zip");
-            ZipOutputStream zos = new ZipOutputStream(fos);
-            ZipEntry ze= new ZipEntry(fileName);
-            zos.putNextEntry(ze);
-            FileInputStream in = new FileInputStream(filePath);
-
-            int len;
-            while ((len = in.read(buffer)) > 0) {
-                zos.write(buffer, 0, len);
-            }
-
-            in.close();
-            zos.closeEntry();
-
-            //remember close it
-            zos.close();
-
-            System.out.println("Done");
-
-        }catch(IOException ex){
-            ex.printStackTrace();
-        }
-    }
 
 
 }

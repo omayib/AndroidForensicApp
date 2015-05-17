@@ -43,6 +43,14 @@ public class PackageAdapter extends BaseExpandableListAdapter{
     public void setChild(PackageInfo parent){
         this.listOfDatabases.put(parent,parent.getDatabaseFiles());
         System.out.println("setChild "+listOfDatabases.get(parent).toString());
+        notifyDataSetInvalidated();
+        notifyDataSetChanged();
+    }
+    public void removeChild(PackageInfo parent){
+       if(!this.listOfDatabases.get(parent).isEmpty()){
+           this.listOfDatabases.remove(parent);
+           notifyDataSetChanged();
+       }
     }
 
     public void setOnChildCheckedListener(OnChildCheckedListener listener){
@@ -112,8 +120,6 @@ public class PackageAdapter extends BaseExpandableListAdapter{
 
 
         viewHolder.textViewGroup.setText(packageInfo.getAppName());
-        viewHolder.textViewGroup.setBackgroundColor(Color.GREEN);
-
         return convertView;
     }
 
@@ -125,14 +131,6 @@ public class PackageAdapter extends BaseExpandableListAdapter{
             convertView=inflater.inflate(resourceChild,parent,false);
             viewHolder=new ChildHolder();
             viewHolder.checkBoxChild = (TextView) convertView.findViewById(R.id.child_item_textView);
-
-            viewHolder.checkBoxChild.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onChildCheckedListener.onChildCheckedListener(dbFileInfo.getPath());
-
-                }
-            });
             convertView.setTag(viewHolder);
         }else{
             viewHolder= (ChildHolder) convertView.getTag();
