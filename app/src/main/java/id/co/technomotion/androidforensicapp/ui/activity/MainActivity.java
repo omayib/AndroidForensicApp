@@ -12,8 +12,11 @@ import android.widget.Toast;
 import com.stericson.RootTools.RootTools;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
 
 import id.co.technomotion.androidforensicapp.R;
 import id.co.technomotion.androidforensicapp.helper.CommandResponse;
@@ -172,10 +175,11 @@ public class MainActivity extends ActionBarActivity {
     private ArrayList<PackageInfo> getPackagesContainDatabases() {
         ArrayList<PackageInfo> apps = getInstalledApps(true); /* false = no system packages */
         for(PackageInfo packageInfo:apps){
-            File f = new File("data/data/"+packageInfo.getPackageName()+"/databases");
-            if (f.exists() && f.isDirectory()) {
-                packageInfo.setDatabaseDirectory();
-            }
+            packageInfo.setDatabaseDirectory();
+//            File f = new File("data/data/"+packageInfo.getPackageName()+"/databases");
+//            if (f.exists() && f.isDirectory()) {
+//                packageInfo.setDatabaseDirectory();
+//            }
         }
         return apps;
     }

@@ -1,18 +1,6 @@
 package id.co.technomotion.androidforensicapp.helper;
 
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveOutputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorOutputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2Utils;
-import org.apache.commons.compress.utils.IOUtils;
-import org.itadaki.bzip2.BZip2OutputStream;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -21,10 +9,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import id.co.technomotion.androidforensicapp.tar.TarEntry;
 import id.co.technomotion.androidforensicapp.tar.TarOutputStream;
@@ -34,7 +21,9 @@ import id.co.technomotion.androidforensicapp.tar.TarOutputStream;
  */
 public class FileCompressor {
     public static void compressToTarBz2(String outputPath,String filePath,String fileName){
-        String tarArchivePath=outputPath+fileName+".tar";
+        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        Date date = new Date();
+        String tarArchivePath=outputPath+fileName+dateFormat.format(date)+".tar";
         String tarBz2FilePath=tarArchivePath+".bz2";
         try {
 
