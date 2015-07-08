@@ -9,9 +9,7 @@ import com.stericson.RootTools.RootTools;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import id.co.technomotion.androidforensicapp.model.DbFileInfo;
 import id.co.technomotion.androidforensicapp.model.PackageInfo;
-import id.co.technomotion.androidforensicapp.ui.activity.MainActivity;
 
 /**
  * Created by omayib on 5/17/15.
@@ -23,7 +21,9 @@ public class SuperUserCommand {
     }
 
     public void getListOfDatabase(PackageInfo packageInfo, final CommandResponse callback){
-        Command command = new Command(packageInfo.getId(), "ls data/data/"+packageInfo.getPackageName()+"/databases"){
+        // "ls data/data/"+packageInfo.getPackageName()+"/databases"
+        String cmd="find data/data/"+packageInfo.getPackageName()+" -type f -name '*db*' && find data/data/"+packageInfo.getPackageName()+" -type f -name '*sqlite*'";
+        Command command = new Command(packageInfo.getId(), cmd){
 
             @Override
             public void commandOutput(int id, String line) {

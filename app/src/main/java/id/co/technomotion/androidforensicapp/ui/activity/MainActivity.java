@@ -3,45 +3,27 @@ package id.co.technomotion.androidforensicapp.ui.activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.os.Environment;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.support.v7.app.ActionBarActivity;
 import android.view.View;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
 
-import com.stericson.RootShell.exceptions.RootDeniedException;
-import com.stericson.RootShell.execution.Command;
 import com.stericson.RootTools.RootTools;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
+import id.co.technomotion.androidforensicapp.R;
 import id.co.technomotion.androidforensicapp.helper.CommandResponse;
 import id.co.technomotion.androidforensicapp.helper.FileCompressor;
 import id.co.technomotion.androidforensicapp.helper.MemoryStorage;
 import id.co.technomotion.androidforensicapp.helper.SuperUserCommand;
-import id.co.technomotion.androidforensicapp.ui.adapter.PackageAdapter;
-import id.co.technomotion.androidforensicapp.R;
 import id.co.technomotion.androidforensicapp.model.DbFileInfo;
 import id.co.technomotion.androidforensicapp.model.Item;
 import id.co.technomotion.androidforensicapp.model.PackageInfo;
+import id.co.technomotion.androidforensicapp.ui.adapter.PackageAdapter;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -152,7 +134,8 @@ public class MainActivity extends ActionBarActivity {
         superUserCommand.getListOfDatabase(pinfo,new CommandResponse() {
             @Override
             public void onSuccess(String response) {
-                pinfo.setDatabaseFiles(new DbFileInfo(response, "data/data/" + pinfo.getPackageName() + "/databases/" + response));
+                //"data/data/" + pinfo.getPackageName()
+                pinfo.setDatabaseFiles(new DbFileInfo(response, response));
             }
 
             @Override

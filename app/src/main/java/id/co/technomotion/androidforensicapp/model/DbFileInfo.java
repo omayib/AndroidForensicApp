@@ -6,7 +6,8 @@ public class DbFileInfo implements Item{
     private boolean isChecked;
 
     public DbFileInfo(String name, String path) {
-        this.name = name;
+        String parsingName=name.substring(name.lastIndexOf("/")+1);
+        this.name = parsingName;
         this.path = path;
     }
 
