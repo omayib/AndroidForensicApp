@@ -12,11 +12,8 @@ import android.widget.Toast;
 import com.stericson.RootTools.RootTools;
 
 import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Date;
 
 import id.co.technomotion.androidforensicapp.R;
 import id.co.technomotion.androidforensicapp.helper.CommandResponse;
